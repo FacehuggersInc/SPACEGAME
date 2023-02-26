@@ -1,34 +1,58 @@
+from Engine import WIDTH, HEIGHT, FPS, refresh
+
+from Engine.camera import Camera
 from Engine.InputManager import Input_Manager
+from Engine.EntityManager import Entity_Manager
+from Engine.Entities.player import Player
+from Engine.Entities.planet import Planet
 
 class Game():
     def __init__(self, engine):
-        self.FPS = 165
-        self.WIDTH = 800#px
-        self.HEIGHT = 500#px
-
-        self.running = False
-
+        #Setup Engine
         self.engine = engine
         self.engine.init()
         self.engine.mixer.init()
-
         self.CLOCK = self.engine.time.Clock()
+        self.DISPLAY = engine.display.set_mode((WIDTH,HEIGHT))
+        self.engine.display.set_caption(f"SPACE GAME")
 
-        self.DISPLAY = self.engine.display
-        self.DISPLAY.set_mode((self.WIDTH,self.HEIGHT))
-        self.DISPLAY.set_caption(f"SPACE GAME")
+        #Camera
+        self.CAMERA = Camera((0,0,0), self.engine, self.DISPLAY)
 
+        #Input
         self.IM = Input_Manager()
 
-        print("[GAME] Instantiated")
+        #Entity Control/Manage
+        self.EM = Entity_Manager(self.CAMERA)
+
+        #Game Variables
+        self.running = False
     
     def run(self):
-        self.running = True
-        print("[GAME] Running")
+        #PREGAME
+        planet = Planet()
+        self.EM.add(planet)
+        player = Player()
+        self.EM.add(player)
+
+        #Set Camera Target
+        self.CAMERA.target = player
 
         #Main Loop
-        while self.running:
-            self.CLOCK.tick(self.FPS)#Tick Clock
-            self.IM.manage(self.engine) #InputManage
+        self.running = True
+        while self.running:#The Game
+            #START
+            self.CLOCK.tick(FPS)#Tick Clock
+            self.IM.manage() #InputManage
 
-            self.engine.display.flip()#Refresh Display
+            #UPDATE | BEFORE ENTITIES
+            self.CAMERA.center_on_target()
+
+            self.EM.update_logic()
+            #UPDATE | AFTER ENTITIES
+
+            #DRAW/RENDER
+            self.CAMERA.draw()
+
+            #END
+            refresh()#Refresh Display
